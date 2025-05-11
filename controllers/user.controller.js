@@ -2,6 +2,8 @@ import { TryCatch } from "../middlewares/error.js";
 import { User } from "../models/user.models.js";
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
+import getDataUri from "../utils/dataUri.js";
+import cloudinary from "../utils/cloudinary.js";
 
 export const register = TryCatch(async (req,res) => {
     const {fullName,email,phoneNumber,password,role} = req.body;
@@ -10,6 +12,13 @@ export const register = TryCatch(async (req,res) => {
             message:"Some Fields are missing",
             success:false
         })
+    }
+    const file = req.file;
+    const fileURI = getDataUri(file)
+
+    let cloudRespose;
+    if(file){
+        cloudRespose =  await cloudinary.uploader.upload(fileURI.content)    
     }
 
     const user = await User.findOne({email})
@@ -28,6 +37,9 @@ export const register = TryCatch(async (req,res) => {
         password:hashedPassword,
         phoneNumber,
         role,
+        profile:{
+            profilePhoto: cloudRespose.secure_url
+        }
     })
 
     return res.status(201).json({
@@ -100,10 +112,14 @@ export const logout = TryCatch(async(req,res) => {
 export const updateProfile = TryCatch(async(req,res) => {
     const {fullName,email,phoneNumber,bio,skills} = req.body;
     const file = req.file;
-    
-    //Cloudinary setup later
 
-
+    let cloudRespose;
+    if(file){
+        const fileURI = getDataUri(file)
+        cloudRespose = await cloudinary.uploader.upload(fileURI.content, {
+            resource_type: "raw"
+            });
+    }
     let skillsArray;
     if(skills){
         skillsArray = skills.split(',')
@@ -120,13 +136,17 @@ export const updateProfile = TryCatch(async(req,res) => {
     //update data
     if(fullName) user.fullName = fullName
     
-    if(phoneNumber) user.phoneNumber = phoneNumber 
-    if(email) user.email = email
-    if(bio) user.profile.bio = bio
-    if(skills) user.profile.skills = skillsArray
+    if(phoneNumber) user.phoneNumber = phoneNumber;
+    if(email) user.email = email;
+    if(bio) user.profile.bio = bio;
+    if(skills) user.profile.skills = skillsArray;
     
     //resume update later
-    
+    if(cloudRespose) { 
+        user.profile.resume = cloudRespose.secure_url;
+        user.profile.resumeOriginalName = file.originalname;
+    }
+
     await user.save()
 
     user = {
