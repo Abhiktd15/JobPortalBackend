@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import getDataUri from "../utils/dataUri.js";
 import cloudinary from "../utils/cloudinary.js";
+import { decode } from "punycode";
 
 export const register = TryCatch(async (req,res) => {
     const {fullName,email,phoneNumber,password,role} = req.body;
@@ -162,4 +163,31 @@ export const updateProfile = TryCatch(async(req,res) => {
         user,
         success:true
     })
+})
+
+export const isAuthorized = TryCatch(async(req,res) => {
+
+    const userId = req.id
+    let user = await User.findById(userId)
+
+    if(!user){
+        return res.status(404).json({
+            message:"User not found",
+            success:false
+        })
+    }
+    user = {
+        _id: user._id,
+        fullName:user.fullName,
+        email:user.email,
+        phoneNumber : user.phoneNumber,
+        role : user.role,
+        profile: user.profile
+    }
+    return res.status(200).json({
+        message:`Welcome Back ${user.fullName}`,
+        user,
+        success:true
+    })
+
 })
