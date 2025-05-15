@@ -1,5 +1,7 @@
 import { TryCatch } from "../middlewares/error.js";
 import { Company } from "../models/company.models.js";
+import cloudinary from "../utils/cloudinary.js";
+import getDataUri from "../utils/dataUri.js";
 
 export const registerCompany = TryCatch(async(req, res) => {
     const {companyName} = req.body;
@@ -31,7 +33,8 @@ export const registerCompany = TryCatch(async(req, res) => {
 export const getCompany = TryCatch(async(req,res) => {
     const userId = req.id;
     
-    const companies = await Company.find({userId})
+    const companies = await Company.find({userId}).sort({createdAt:-1})
+
     if(!companies){
         return res.status(404).json({
             message:"Companies not found",
@@ -66,13 +69,25 @@ export const getCompanyById = TryCatch(async(req,res) => {
 export const updateCompany = TryCatch(async(req,res) => {
     const {name,description,website,location} = req.body;
     const file = req.file
+    let FileURI;
+    if(file){
+        FileURI = getDataUri(file)
+    }
+
+    let cloudResponse;
+    if(file){
+        cloudResponse = await cloudinary.uploader.upload(FileURI.content)
+    }
+    const logo  = cloudResponse?.secure_url
+
     const companyId = req.params.id;
 
     const company = await Company.findByIdAndUpdate(companyId,{
         name,
         description,
         website,
-        location
+        location,
+        logo
     },{new:true})
     
     if(!company){
