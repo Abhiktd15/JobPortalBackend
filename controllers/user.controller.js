@@ -61,7 +61,7 @@ export const login = TryCatch(async(req,res) => {
     let user = await User.findOne({email})
     if(!user) {
         return res.status(400).json({
-            message:"Incorrect Credentials ! ",
+            message:"Incorrect Credentials OR User Doesn't Exists ! ",
             success:false
         })
     }
