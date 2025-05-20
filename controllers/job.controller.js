@@ -89,3 +89,44 @@ export const getAdminJob = TryCatch(async(req,res) => {
     })
 
 })
+export const filterData = TryCatch(async (req,res) => {
+    //Get the title,location,salary from all the jobs
+    const Jobs = await Job.find({}).select("title salary location")
+
+    if(!Jobs) {
+        return res.status(400).json({
+            message:"NO job found",
+            success:false
+        })
+    }
+    const locationSet = new Set();
+    const industrySet = new Set();
+    const salarySet = new Set();
+
+    Jobs.forEach(job => {
+        if(job.location) locationSet.add(job.location)
+        if(job.salary) salarySet.add(job.salary)
+        if(job.title) industrySet.add(job.title)
+    })
+
+    const filterData = [
+        {
+            filterType: "Location",
+            array: Array.from(locationSet)
+        },
+        {
+            filterType: "Industry",
+            array: Array.from(industrySet)
+        },
+        {
+            filterType: "Salary",
+            array: Array.from(salarySet)
+        }
+    ];
+
+    return res.status(200).json({
+        filterData,
+        success:true
+    })
+    
+})
