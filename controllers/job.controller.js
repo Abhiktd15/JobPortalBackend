@@ -37,6 +37,7 @@ export const getAllJobs = TryCatch(async (req,res) => {
         $or:[
             {title:{$regex:keyword,$options:"i"}},
             {description:{$regex:keyword,$options:"i"}},
+            {location:{$regex:keyword,$options:"i"}},
         ]
     }
 
